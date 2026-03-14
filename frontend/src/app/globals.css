@@ -1,0 +1,45 @@
+@import "tailwindcss/preflight";
+@tailwind utilities;
+
+:root {
+  --background: 220 17% 7%;
+  --foreground: 210 20% 98%;
+  --card: 220 14% 11%;
+  --card-foreground: 210 20% 98%;
+  --popover: 220 14% 11%;
+  --popover-foreground: 210 20% 98%;
+  --primary: 20 90% 52%;
+  --primary-foreground: 210 20% 98%;
+  --secondary: 220 12% 17%;
+  --secondary-foreground: 210 20% 98%;
+  --muted: 220 10% 20%;
+  --muted-foreground: 220 8% 70%;
+  --accent: 28 92% 55%;
+  --accent-foreground: 210 20% 98%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 20% 98%;
+  --border: 220 10% 22%;
+  --input: 220 10% 22%;
+  --ring: 20 90% 52%;
+}
+
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.display-font {
+  font-family: var(--font-display), ui-serif, Georgia, "Times New Roman", serif;
+}
+
+@layer utilities {
+  @keyframes fade-up {
+    0% { opacity: 0; transform: translateY(8px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-fade-up {
+    animation: fade-up 500ms ease-out both;
+  }
+}
