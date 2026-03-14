@@ -6,10 +6,10 @@ const { protect } = require('../middleware/authMiddleware');
 router.route('/')
     .post(protect, createPost);
 
-router.get('/feed', protect, getFeed);
+router.get('/feed', getFeed);
 
 router.route('/:id')
-    .get(protect, getPostById)
+    .get(getPostById)
     .delete(protect, deletePost);
 
 module.exports = router;

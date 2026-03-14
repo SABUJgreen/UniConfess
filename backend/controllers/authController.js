@@ -22,6 +22,8 @@ const registerUser = async (req, res) => {
     }
 
     try {
+        const normalizedEmail = email ? email.trim().toLowerCase() : undefined;
+        const normalizedAlias = alias ? alias.trim() : alias;
         let collegeId = providedCollegeId;
         if (!collegeId && collegeName) {
             const trimmedName = collegeName.trim();
@@ -45,20 +47,26 @@ const registerUser = async (req, res) => {
             }
         }
 
-        // Check if user exists
-        const userExists = await User.findOne({
-            $or: [
-                { email: email || null },
-                { phone: phone || null },
-                { alias }
-            ]
-        });
-
-        if (userExists) {
-            if (userExists.alias === alias) {
+        // Check if email/alias/phone already exists
+        if (normalizedAlias) {
+            const aliasExists = await User.findOne({ alias: normalizedAlias });
+            if (aliasExists) {
                 return res.status(400).json({ message: 'Alias already taken' });
             }
-            return res.status(400).json({ message: 'User already exists' });
+        }
+
+        if (normalizedEmail) {
+            const emailExists = await User.findOne({ email: normalizedEmail });
+            if (emailExists) {
+                return res.status(400).json({ message: 'Email already used' });
+            }
+        }
+
+        if (phone) {
+            const phoneExists = await User.findOne({ phone });
+            if (phoneExists) {
+                return res.status(400).json({ message: 'Phone already used' });
+            }
         }
 
         // Hash password
@@ -68,10 +76,10 @@ const registerUser = async (req, res) => {
         // Create user
         const user = await User.create({
             realName,
-            email,
+            email: normalizedEmail,
             phone,
             passwordHash,
-            alias,
+            alias: normalizedAlias,
             collegeId
         });
 
@@ -86,6 +94,15 @@ const registerUser = async (req, res) => {
             res.status(400).json({ message: 'Invalid user data' });
         }
     } catch (error) {
+        if (error && error.code === 11000) {
+            const field = Object.keys(error.keyPattern || {})[0] || 'field';
+            const message = field === 'email'
+                ? 'Email already used'
+                : field === 'alias'
+                    ? 'Alias already taken'
+                    : 'User already exists';
+            return res.status(400).json({ message });
+        }
         res.status(500).json({ message: error.message });
     }
 };

@@ -21,7 +21,7 @@ export default function Navbar() {
             <div className="container mx-auto max-w-6xl flex h-16 items-center gap-4 px-4">
                 {/* Logo */}
                 <Link
-                    href={user ? "/feed" : "/"}
+                    href="/"
                     className="flex gap-2.5 items-center shrink-0 group"
                 >
                     <div className="relative">
