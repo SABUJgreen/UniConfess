@@ -14,6 +14,7 @@ export default function Signup() {
     const [password, setPassword] = useState('');
     const [alias, setAlias] = useState('');
     const [collegeId, setCollegeId] = useState('');
+    const [collegeName, setCollegeName] = useState('');
     const [colleges, setColleges] = useState<{ _id: string; name: string }[]>([]);
     const [submitting, setSubmitting] = useState(false);
     const [loadingColleges, setLoadingColleges] = useState(true);
@@ -33,7 +34,20 @@ export default function Signup() {
         setSubmitting(true);
 
         try {
-            const res = await api.post('/auth/register', { realName, email, password, alias, collegeId });
+            const payload: { realName: string; email: string; password: string; alias: string; collegeId?: string; collegeName?: string } = {
+                realName,
+                email,
+                password,
+                alias
+            };
+
+            if (collegeId) {
+                payload.collegeId = collegeId;
+            } else {
+                payload.collegeName = collegeName;
+            }
+
+            const res = await api.post('/auth/register', payload);
             login(res.data.token, res.data);
             toast.success('Welcome to UniConfess!');
             router.push('/feed');
@@ -140,28 +154,35 @@ export default function Signup() {
                             <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Your College</label>
                             <div className="relative">
                                 <GraduationCap size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
-                                <select
+                                <input
+                                    type="text"
                                     required
-                                    value={collegeId}
-                                    onChange={(e) => setCollegeId(e.target.value)}
-                                    disabled={loadingColleges}
-                                    className="w-full bg-secondary/60 border border-white/[0.07] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/40 transition-all appearance-none cursor-pointer disabled:opacity-50"
-                                    aria-label="Select college"
-                                >
-                                    <option value="">Select your institution</option>
-                                    {colleges.map(c => (
-                                        <option key={c._id} value={c._id}>{c.name}</option>
+                                    value={collegeName}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setCollegeName(value);
+                                        const matchedCollege = colleges.find((college) => college.name.toLowerCase() === value.trim().toLowerCase());
+                                        setCollegeId(matchedCollege?._id || '');
+                                    }}
+                                    list="college-list"
+                                    className={inputClass}
+                                    placeholder={loadingColleges ? 'Loading colleges...' : 'Type your institution name'}
+                                    aria-label="Enter college name"
+                                />
+                                <datalist id="college-list">
+                                    {colleges.map((college) => (
+                                        <option key={college._id} value={college.name} />
                                     ))}
-                                </select>
+                                </datalist>
                             </div>
                             <p className="text-[11px] text-amber-500/70 flex items-center gap-1 pl-1">
-                                <AlertCircle size={11} /> Cannot be changed after sign-up.
+                                <AlertCircle size={11} /> Type freely or pick a suggestion.
                             </p>
                         </div>
 
                         <button
                             type="submit"
-                            disabled={submitting || loadingColleges}
+                            disabled={submitting}
                             className="w-full bg-primary text-white font-semibold py-3 rounded-xl hover:bg-primary/90 transition-all shadow-[0_0_20px_rgba(139,92,246,0.4)] hover:shadow-[0_0_28px_rgba(139,92,246,0.6)] hover:-translate-y-0.5 flex justify-center items-center mt-2 disabled:opacity-60 disabled:hover:translate-y-0"
                         >
                             {submitting ? <Loader2 className="animate-spin" size={18} /> : 'Create Account'}

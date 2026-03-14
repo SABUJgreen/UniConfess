@@ -14,6 +14,7 @@ export default function Signup() {
     const [password, setPassword] = useState('');
     const [alias, setAlias] = useState('');
     const [collegeId, setCollegeId] = useState('');
+    const [collegeName, setCollegeName] = useState('');
     const [colleges, setColleges] = useState<{ _id: string, name: string }[]>([]);
 
     const [submitting, setSubmitting] = useState(false);
@@ -41,13 +42,20 @@ export default function Signup() {
         setSubmitting(true);
 
         try {
-            const res = await api.post('/auth/register', {
+            const payload: { realName: string; email: string; password: string; alias: string; collegeId?: string; collegeName?: string } = {
                 realName,
                 email, // using email exclusively for signup in this simple implementation
                 password,
-                alias,
-                collegeId
-            });
+                alias
+            };
+
+            if (collegeId) {
+                payload.collegeId = collegeId;
+            } else {
+                payload.collegeName = collegeName;
+            }
+
+            const res = await api.post('/auth/register', payload);
 
             login(res.data.token, res.data);
             toast.success('Registration successful! Welcome to UniConfess.');
@@ -121,25 +129,32 @@ export default function Signup() {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">Select College</label>
-                        <select
+                        <label className="text-sm font-medium">Your College</label>
+                        <input
+                            type="text"
                             required
-                            value={collegeId}
-                            onChange={(e) => setCollegeId(e.target.value)}
-                            disabled={loadingColleges}
-                            className="w-full bg-secondary/60 border border-white/10 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary transition-all appearance-none cursor-pointer disabled:opacity-50"
-                        >
-                            <option value="">Select your institution</option>
-                            {colleges.map(c => (
-                                <option key={c._id} value={c._id}>{c.name}</option>
+                            value={collegeName}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                setCollegeName(value);
+                                const matchedCollege = colleges.find((college) => college.name.toLowerCase() === value.trim().toLowerCase());
+                                setCollegeId(matchedCollege?._id || '');
+                            }}
+                            list="college-list"
+                            className="w-full bg-secondary/60 border border-white/10 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                            placeholder={loadingColleges ? 'Loading colleges...' : 'Type your institution name'}
+                        />
+                        <datalist id="college-list">
+                            {colleges.map((college) => (
+                                <option key={college._id} value={college.name} />
                             ))}
-                        </select>
+                        </datalist>
                         <p className="text-xs text-muted-foreground text-destructive mt-1">Note: You cannot change this later.</p>
                     </div>
 
                     <button
                         type="submit"
-                        disabled={submitting || loadingColleges}
+                        disabled={submitting}
                         className="w-full bg-primary text-primary-foreground font-semibold py-3 rounded-lg hover:bg-primary/90 transition-all flex justify-center items-center h-12 shadow-[0_0_20px_rgba(255,69,0,0.3)] mt-6 hover:-translate-y-0.5"
                     >
                         {submitting ? <Loader2 className="animate-spin" size={20} /> : 'Create Account'}

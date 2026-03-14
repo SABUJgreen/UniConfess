@@ -1,6 +1,9 @@
 const User = require('../models/User');
+const College = require('../models/College');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET || 'fallback_secret', {
@@ -12,13 +15,36 @@ const generateToken = (id) => {
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = async (req, res) => {
-    const { realName, email, phone, password, alias, collegeId } = req.body;
+    const { realName, email, phone, password, alias, collegeId: providedCollegeId, collegeName } = req.body;
 
-    if (!realName || !password || !alias || !collegeId || (!email && !phone)) {
+    if (!realName || !password || !alias || (!providedCollegeId && !collegeName) || (!email && !phone)) {
         return res.status(400).json({ message: 'Please add all required fields' });
     }
 
     try {
+        let collegeId = providedCollegeId;
+        if (!collegeId && collegeName) {
+            const trimmedName = collegeName.trim();
+            if (!trimmedName) {
+                return res.status(400).json({ message: 'College name is required' });
+            }
+
+            const existingCollege = await College.findOne({
+                name: new RegExp(`^${escapeRegex(trimmedName)}$`, 'i')
+            });
+
+            if (existingCollege) {
+                collegeId = existingCollege._id;
+            } else {
+                const createdCollege = await College.create({
+                    name: trimmedName,
+                    city: 'Unknown',
+                    state: 'Unknown'
+                });
+                collegeId = createdCollege._id;
+            }
+        }
+
         // Check if user exists
         const userExists = await User.findOne({
             $or: [
